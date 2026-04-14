@@ -1,0 +1,164 @@
+pipeline:
+  name: POC Flink Statement Provision
+  identifier: poc_flink_statement_provision
+  projectIdentifier: pocflinkworkspace
+  orgIdentifier: default
+  properties:
+    ci:
+      codebase:
+        connectorRef: poc-github-connector
+        repoName: poc-flink-terraform
+        build: <+input>
+  variables:
+    - name: resource_name
+      type: String
+      description: Resource name (e.g., us-central1_flink-statement-supply)
+      required: true
+      value: <+input>
+    - name: workspace_name
+      type: String
+      description: Harness workspace name
+      default: poc-flink-workspace
+      required: true
+      value: poc-flink-workspace
+  stages:
+    - stage:
+        name: Extract Domain
+        identifier: extract_domain
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Parse Resource Name
+                  identifier: parse_resource_name
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          #!/bin/bash
+                          set -e
+
+                          RESOURCE_NAME="<+pipeline.variables.resource_name>"
+                          echo "Resource name: $RESOURCE_NAME"
+
+                          # Extract domain from resource name
+                          # Pattern: us-central1_flink-statement-{DOMAIN}_backend.tfvars
+                          DOMAIN=$(echo "$RESOURCE_NAME" | sed -E 's/.*flink-statement-([^_]+).*/\1/')
+
+                          echo "Extracted domain: $DOMAIN"
+
+                          # Export for next stage
+                          echo "$DOMAIN" > /tmp/domain.txt
+                    outputVariables:
+                      - name: domain
+                        type: String
+                        value: domain
+                    environmentVariables: []
+                  timeout: 5m
+    - stage:
+        name: Terraform Plan
+        identifier: terraform_plan
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Terraform Init and Plan
+                  identifier: terraform_plan_step
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          #!/bin/bash
+                          set -e
+
+                          # Read domain from previous stage
+                          DOMAIN=$(cat /tmp/domain.txt)
+                          echo "Domain: $DOMAIN"
+
+                          # Set working directory
+                          WORK_DIR="<+workspace.variables.working_directory>"
+                          cd "$WORK_DIR"
+
+                          # Get resource name components
+                          RESOURCE_NAME="<+pipeline.variables.resource_name>"
+                          PROPERTIES_FILE="properties/dev/${RESOURCE_NAME}_properties.tfvars"
+
+                          # Create state directory for this domain
+                          STATE_DIR="state/${DOMAIN}"
+                          mkdir -p "$STATE_DIR"
+
+                          # Initialize Terraform with local backend
+                          terraform init -backend-config="path=${STATE_DIR}/terraform.tfstate"
+
+                          # Plan
+                          terraform plan \
+                            -var-file="$PROPERTIES_FILE" \
+                            -out=tfplan
+
+                          # Show plan
+                          terraform show tfplan
+                    environmentVariables:
+                      - name: CONFLUENT_CLOUD_API_KEY
+                        type: String
+                        value: <+secrets.getValue("confluent_cloud_api_key")>
+                      - name: CONFLUENT_CLOUD_API_SECRET
+                        type: String
+                        value: <+secrets.getValue("confluent_cloud_api_secret")>
+                      - name: TF_VAR_kafka_int_flink_api_key
+                        type: String
+                        value: <+secrets.getValue("flink_api_key_<+stage.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
+                      - name: TF_VAR_kafka_int_flink_api_secret
+                        type: String
+                        value: <+secrets.getValue("flink_api_secret_<+stage.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
+                  timeout: 10m
+    - stage:
+        name: Terraform Apply
+        identifier: terraform_apply
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Terraform Apply
+                  identifier: terraform_apply_step
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |
+                          #!/bin/bash
+                          set -e
+
+                          # Set working directory
+                          WORK_DIR="<+workspace.variables.working_directory>"
+                          cd "$WORK_DIR"
+
+                          # Apply the plan
+                          terraform apply tfplan
+
+                          # Show outputs
+                          terraform output
+                    environmentVariables:
+                      - name: CONFLUENT_CLOUD_API_KEY
+                        type: String
+                        value: <+secrets.getValue("confluent_cloud_api_key")>
+                      - name: CONFLUENT_CLOUD_API_SECRET
+                        type: String
+                        value: <+secrets.getValue("confluent_cloud_api_secret")>
+                  timeout: 15m
+        when:
+          pipelineStatus: Success
+          condition: <+input>
