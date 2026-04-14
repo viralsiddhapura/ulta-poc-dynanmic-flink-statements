@@ -44,15 +44,12 @@ pipeline:
                           RESOURCE_NAME="<+pipeline.variables.resource_name>"
                           echo "Resource name: $RESOURCE_NAME"
 
-                          DOMAIN=$(echo "$RESOURCE_NAME" | sed -E 's/.*flink-statement-([^_]+).*/\1/')
-                          echo "Extracted domain: $DOMAIN"
+                          domain=$(echo "$RESOURCE_NAME" | sed -E 's/.*flink-statement-([^_]+).*/\1/')
+                          echo "Extracted domain: $domain"
 
                           # Save to file
-                          echo "$DOMAIN" > /tmp/domain.txt
-
-                          # Export as output variable for Harness
-                          export domain=$DOMAIN
-                          echo "Domain extracted: $DOMAIN"
+                          echo "$domain" > /tmp/domain.txt
+                          echo "Domain extracted: $domain"
                     outputVariables:
                       - name: domain
                         type: String
@@ -168,10 +165,10 @@ pipeline:
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
                       - name: TF_VAR_kafka_int_flink_api_key
                         type: String
-                        value: <+secrets.getValue("flink_api_key_" + <+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
+                        value: <+secrets.getValue("flink_api_key_".concat(<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
                       - name: TF_VAR_kafka_int_flink_api_secret
                         type: String
-                        value: <+secrets.getValue("flink_api_secret_" + <+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
+                        value: <+secrets.getValue("flink_api_secret_".concat(<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
                   timeout: 10m
 
     - stage:
@@ -239,10 +236,10 @@ pipeline:
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
                       - name: TF_VAR_kafka_int_flink_api_key
                         type: String
-                        value: <+secrets.getValue("flink_api_key_" + <+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
+                        value: <+secrets.getValue("flink_api_key_".concat(<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
                       - name: TF_VAR_kafka_int_flink_api_secret
                         type: String
-                        value: <+secrets.getValue("flink_api_secret_" + <+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
+                        value: <+secrets.getValue("flink_api_secret_".concat(<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
                   timeout: 15m
         when:
           pipelineStatus: Success
