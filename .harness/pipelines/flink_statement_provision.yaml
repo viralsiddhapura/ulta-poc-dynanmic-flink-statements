@@ -3,12 +3,6 @@ pipeline:
   identifier: poc_flink_statement_provision
   projectIdentifier: pocflinkworkspace
   orgIdentifier: default
-  properties:
-    ci:
-      codebase:
-        connectorRef: poc-github-connector
-        repoName: poc-flink-terraform
-        build: pocgithubconnector
   variables:
     - name: resource_name
       type: String
