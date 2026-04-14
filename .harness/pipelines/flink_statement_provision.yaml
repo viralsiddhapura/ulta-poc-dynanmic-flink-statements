@@ -87,8 +87,21 @@ pipeline:
                           DOMAIN=$(cat /tmp/domain.txt)
                           echo "=== Domain: $DOMAIN ==="
 
+                          # Select domain-specific credentials
+                          if [ "$DOMAIN" = "supply" ]; then
+                            export TF_VAR_kafka_int_flink_api_key="$FLINK_API_KEY_SUPPLY"
+                            export TF_VAR_kafka_int_flink_api_secret="$FLINK_API_SECRET_SUPPLY"
+                          elif [ "$DOMAIN" = "product" ]; then
+                            export TF_VAR_kafka_int_flink_api_key="$FLINK_API_KEY_PRODUCT"
+                            export TF_VAR_kafka_int_flink_api_secret="$FLINK_API_SECRET_PRODUCT"
+                          else
+                            echo "ERROR: Unknown domain: $DOMAIN"
+                            exit 1
+                          fi
+
                           # DEBUG: Show which credentials are being used (REMOVE IN PRODUCTION)
                           echo "=== CREDENTIALS DEBUG (POC ONLY) ==="
+                          echo "Domain: $DOMAIN"
                           echo "CONFLUENT_CLOUD_API_KEY: ${CONFLUENT_CLOUD_API_KEY}"
                           echo "CONFLUENT_CLOUD_API_SECRET: ${CONFLUENT_CLOUD_API_SECRET}"
                           echo "TF_VAR_kafka_int_flink_api_key: ${TF_VAR_kafka_int_flink_api_key}"
@@ -165,12 +178,18 @@ pipeline:
                       - name: CONFLUENT_CLOUD_API_SECRET
                         type: String
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
-                      - name: TF_VAR_kafka_int_flink_api_key
+                      - name: FLINK_API_KEY_SUPPLY
                         type: String
-                        value: <+secrets.getValue("flink_api_key_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
-                      - name: TF_VAR_kafka_int_flink_api_secret
+                        value: <+secrets.getValue("flink_api_key_supply")>
+                      - name: FLINK_API_SECRET_SUPPLY
                         type: String
-                        value: <+secrets.getValue("flink_api_secret_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
+                        value: <+secrets.getValue("flink_api_secret_supply")>
+                      - name: FLINK_API_KEY_PRODUCT
+                        type: String
+                        value: <+secrets.getValue("flink_api_key_product")>
+                      - name: FLINK_API_SECRET_PRODUCT
+                        type: String
+                        value: <+secrets.getValue("flink_api_secret_product")>
                   timeout: 10m
 
     - stage:
@@ -203,8 +222,21 @@ pipeline:
                           echo "=== Working directory: $WORK_DIR ==="
                           echo "=== Domain: $DOMAIN ==="
 
+                          # Select domain-specific credentials
+                          if [ "$DOMAIN" = "supply" ]; then
+                            export TF_VAR_kafka_int_flink_api_key="$FLINK_API_KEY_SUPPLY"
+                            export TF_VAR_kafka_int_flink_api_secret="$FLINK_API_SECRET_SUPPLY"
+                          elif [ "$DOMAIN" = "product" ]; then
+                            export TF_VAR_kafka_int_flink_api_key="$FLINK_API_KEY_PRODUCT"
+                            export TF_VAR_kafka_int_flink_api_secret="$FLINK_API_SECRET_PRODUCT"
+                          else
+                            echo "ERROR: Unknown domain: $DOMAIN"
+                            exit 1
+                          fi
+
                           # DEBUG: Show which credentials are being used (REMOVE IN PRODUCTION)
                           echo "=== CREDENTIALS DEBUG (POC ONLY) ==="
+                          echo "Domain: $DOMAIN"
                           echo "CONFLUENT_CLOUD_API_KEY: ${CONFLUENT_CLOUD_API_KEY}"
                           echo "CONFLUENT_CLOUD_API_SECRET: ${CONFLUENT_CLOUD_API_SECRET}"
                           echo "TF_VAR_kafka_int_flink_api_key: ${TF_VAR_kafka_int_flink_api_key}"
@@ -235,12 +267,18 @@ pipeline:
                       - name: CONFLUENT_CLOUD_API_SECRET
                         type: String
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
-                      - name: TF_VAR_kafka_int_flink_api_key
+                      - name: FLINK_API_KEY_SUPPLY
                         type: String
-                        value: <+secrets.getValue("flink_api_key_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
-                      - name: TF_VAR_kafka_int_flink_api_secret
+                        value: <+secrets.getValue("flink_api_key_supply")>
+                      - name: FLINK_API_SECRET_SUPPLY
                         type: String
-                        value: <+secrets.getValue("flink_api_secret_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
+                        value: <+secrets.getValue("flink_api_secret_supply")>
+                      - name: FLINK_API_KEY_PRODUCT
+                        type: String
+                        value: <+secrets.getValue("flink_api_key_product")>
+                      - name: FLINK_API_SECRET_PRODUCT
+                        type: String
+                        value: <+secrets.getValue("flink_api_secret_product")>
                   timeout: 15m
         when:
           pipelineStatus: Success
