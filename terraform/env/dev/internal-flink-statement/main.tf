@@ -11,13 +11,13 @@ terraform {
   required_providers {
     confluent = {
       source  = "confluentinc/confluent"
-      version = "~> 2.29.0"
+      version = "~> 1.83.0"
     }
   }
 }
 
-# provider "confluent" {
-#   # Credentials will be provided via environment variables
-#   # CONFLUENT_CLOUD_API_KEY
-#   # CONFLUENT_CLOUD_API_SECRET
-# }
+provider "confluent" {
+  # Credentials will be provided via environment variables
+  # CONFLUENT_CLOUD_API_KEY
+  # CONFLUENT_CLOUD_API_SECRET
+}
