@@ -10,6 +10,10 @@ terraform {
 resource "confluent_flink_statement" "statements" {
   for_each = { for stmt in var.flink_statements : stmt.name => stmt }
 
+  organization {
+    id = var.organization_id
+  }
+
   environment {
     id = var.environment_id
   }

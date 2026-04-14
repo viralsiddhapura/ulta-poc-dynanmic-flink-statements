@@ -1,3 +1,8 @@
+variable "organization_id" {
+  description = "Confluent Cloud Organization ID"
+  type        = string
+}
+
 variable "environment_id" {
   description = "Confluent Cloud Environment ID"
   type        = string

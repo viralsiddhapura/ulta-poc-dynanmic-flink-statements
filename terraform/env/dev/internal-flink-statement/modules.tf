@@ -1,6 +1,7 @@
 module "flink_statements" {
   source = "../../../../modules/flink-statements"
 
+  organization_id       = var.organization_id
   environment_id        = var.environment_id
   compute_pool_id       = var.compute_pool_id
   kafka_cluster_id      = var.kafka_cluster_id
