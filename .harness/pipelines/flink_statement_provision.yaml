@@ -156,9 +156,6 @@ pipeline:
                       - name: CONFLUENT_CLOUD_API_SECRET
                         type: String
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
-                      - name: CONFLUENT_ORGANIZATION_ID
-                        type: String
-                        value: <+secrets.getValue("confluent_organization_id")>
                       - name: TF_VAR_kafka_int_flink_api_key
                         type: String
                         value: <+secrets.getValue("flink_api_key_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
@@ -219,9 +216,6 @@ pipeline:
                       - name: CONFLUENT_CLOUD_API_SECRET
                         type: String
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
-                      - name: CONFLUENT_ORGANIZATION_ID
-                        type: String
-                        value: <+secrets.getValue("confluent_organization_id")>
                   timeout: 15m
         when:
           pipelineStatus: Success
