@@ -8,7 +8,7 @@ pipeline:
       codebase:
         connectorRef: poc-github-connector
         repoName: poc-flink-terraform
-        build: <+input>
+        build: pocgithubconnector
   variables:
     - name: resource_name
       type: String
