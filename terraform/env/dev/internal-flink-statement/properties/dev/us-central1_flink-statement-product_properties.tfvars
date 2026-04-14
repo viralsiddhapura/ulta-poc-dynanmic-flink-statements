@@ -5,22 +5,8 @@ principal       = "sa-k89wn2m"           # Supply service account ID
 
 flink_statements = [
   {
-    name = "product_stream_processor"
-    statement = "
-      CREATE TABLE product_updates (
-        product_id STRING,
-        name STRING,
-        price DECIMAL(10,2),
-        timestamp TIMESTAMP(3),
-        WATERMARK FOR timestamp AS timestamp - INTERVAL '5' SECOND
-      ) WITH (
-        'kafka.topic' = 'product.updates',
-        'value.format' = 'json'
-      );
-    "
-    properties = {
-      "sql.current-catalog"  = "my-catalog"
-      "sql.current-database" = "my-database"
-    }
+    name = "product_test_statement"
+    statement = "SHOW DATABASES;"
+    properties = {}
   }
 ]

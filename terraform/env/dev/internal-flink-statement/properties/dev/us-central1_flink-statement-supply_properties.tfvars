@@ -6,22 +6,8 @@ principal       = "sa-rry65o1"           # Supply service account ID
 
 flink_statements = [
   {
-    name = "supply_stream_processor"
-    statement = "
-      CREATE TABLE supply_events (
-        event_id STRING,
-        product_id STRING,
-        quantity INT,
-        timestamp TIMESTAMP(3),
-        WATERMARK FOR timestamp AS timestamp - INTERVAL '5' SECOND
-      ) WITH (
-        'kafka.topic' = 'supply.events',
-        'value.format' = 'json'
-      );
-    "
-    properties = {
-      "sql.current-catalog"  = "my-catalog"
-      "sql.current-database" = "my-database"
-    }
+    name = "supply_test_statement"
+    statement = "SHOW CATALOGS;"
+    properties = {}
   }
 ]
