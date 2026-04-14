@@ -50,7 +50,8 @@ pipeline:
                           # Save to file
                           echo "$DOMAIN" > /tmp/domain.txt
 
-                          # Also export as output variable
+                          # Export as output variable for Harness
+                          export domain=$DOMAIN
                           echo "Domain extracted: $DOMAIN"
                     outputVariables:
                       - name: domain
