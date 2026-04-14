@@ -86,6 +86,14 @@ pipeline:
                           DOMAIN=$(cat /tmp/domain.txt)
                           echo "=== Domain: $DOMAIN ==="
 
+                          # DEBUG: Show which credentials are being used (REMOVE IN PRODUCTION)
+                          echo "=== CREDENTIALS DEBUG (POC ONLY) ==="
+                          echo "CONFLUENT_CLOUD_API_KEY: ${CONFLUENT_CLOUD_API_KEY}"
+                          echo "CONFLUENT_CLOUD_API_SECRET: ${CONFLUENT_CLOUD_API_SECRET}"
+                          echo "TF_VAR_kafka_int_flink_api_key: ${TF_VAR_kafka_int_flink_api_key}"
+                          echo "TF_VAR_kafka_int_flink_api_secret: ${TF_VAR_kafka_int_flink_api_secret}"
+                          echo "=== END CREDENTIALS DEBUG ==="
+
                           # Clone repository
                           echo "=== Cloning repository ==="
                           WORK_DIR="/tmp/terraform-workspace-$$"
@@ -189,8 +197,18 @@ pipeline:
 
                           # Get work directory from plan stage
                           WORK_DIR=$(cat /tmp/work_dir.txt)
+                          DOMAIN=$(cat /tmp/domain.txt)
 
                           echo "=== Working directory: $WORK_DIR ==="
+                          echo "=== Domain: $DOMAIN ==="
+
+                          # DEBUG: Show which credentials are being used (REMOVE IN PRODUCTION)
+                          echo "=== CREDENTIALS DEBUG (POC ONLY) ==="
+                          echo "CONFLUENT_CLOUD_API_KEY: ${CONFLUENT_CLOUD_API_KEY}"
+                          echo "CONFLUENT_CLOUD_API_SECRET: ${CONFLUENT_CLOUD_API_SECRET}"
+                          echo "TF_VAR_kafka_int_flink_api_key: ${TF_VAR_kafka_int_flink_api_key}"
+                          echo "TF_VAR_kafka_int_flink_api_secret: ${TF_VAR_kafka_int_flink_api_secret}"
+                          echo "=== END CREDENTIALS DEBUG ==="
 
                           # Change to terraform directory
                           cd "$WORK_DIR/terraform/env/dev/internal-flink-statement"
@@ -216,6 +234,12 @@ pipeline:
                       - name: CONFLUENT_CLOUD_API_SECRET
                         type: String
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
+                      - name: TF_VAR_kafka_int_flink_api_key
+                        type: String
+                        value: <+secrets.getValue("flink_api_key_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
+                      - name: TF_VAR_kafka_int_flink_api_secret
+                        type: String
+                        value: <+secrets.getValue("flink_api_secret_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
                   timeout: 15m
         when:
           pipelineStatus: Success
