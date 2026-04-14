@@ -1,5 +1,5 @@
 module "flink_statements" {
-  source = "../../../modules/flink-statements"
+  source = "../../../../modules/flink-statements"
 
   environment_id        = var.environment_id
   compute_pool_id       = var.compute_pool_id
