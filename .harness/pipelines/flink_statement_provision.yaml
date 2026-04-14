@@ -3,18 +3,20 @@ pipeline:
   identifier: poc_flink_statement_provision
   projectIdentifier: pocflinkworkspace
   orgIdentifier: default
+
   variables:
     - name: resource_name
       type: String
-      description: Resource name (e.g., us-central1_flink-statement-supply)
+      description: "Resource name (e.g., us-central1_flink-statement-supply)"
       required: true
       value: <+input>
+
     - name: workspace_name
       type: String
-      description: Harness workspace name
-      default: poc-flink-workspace
+      description: "Harness workspace name"
+      default: "pocflinkworkspace"
       required: true
-      value: poc-flink-workspace
+
   stages:
     - stage:
         name: Extract Domain
@@ -30,6 +32,8 @@ pipeline:
                   spec:
                     shell: Bash
                     onDelegate: true
+                    delegateSelectors:
+                      - poc
                     source:
                       type: Inline
                       spec:
@@ -40,20 +44,21 @@ pipeline:
                           RESOURCE_NAME="<+pipeline.variables.resource_name>"
                           echo "Resource name: $RESOURCE_NAME"
 
-                          # Extract domain from resource name
-                          # Pattern: us-central1_flink-statement-{DOMAIN}_backend.tfvars
                           DOMAIN=$(echo "$RESOURCE_NAME" | sed -E 's/.*flink-statement-([^_]+).*/\1/')
-
                           echo "Extracted domain: $DOMAIN"
 
-                          # Export for next stage
+                          # Save to file
                           echo "$DOMAIN" > /tmp/domain.txt
+
+                          # Also export as output variable
+                          echo "Domain extracted: $DOMAIN"
                     outputVariables:
                       - name: domain
                         type: String
                         value: domain
                     environmentVariables: []
                   timeout: 5m
+
     - stage:
         name: Terraform Plan
         identifier: terraform_plan
@@ -63,11 +68,13 @@ pipeline:
             steps:
               - step:
                   type: ShellScript
-                  name: Terraform Init and Plan
+                  name: Git Checkout and Terraform Plan
                   identifier: terraform_plan_step
                   spec:
                     shell: Bash
                     onDelegate: true
+                    delegateSelectors:
+                      - poc
                     source:
                       type: Inline
                       spec:
@@ -77,30 +84,71 @@ pipeline:
 
                           # Read domain from previous stage
                           DOMAIN=$(cat /tmp/domain.txt)
-                          echo "Domain: $DOMAIN"
+                          echo "=== Domain: $DOMAIN ==="
 
-                          # Set working directory
-                          WORK_DIR="<+workspace.variables.working_directory>"
-                          cd "$WORK_DIR"
+                          # Clone repository
+                          echo "=== Cloning repository ==="
+                          WORK_DIR="/tmp/terraform-workspace-$$"
 
-                          # Get resource name components
+                          # Remove if exists
+                          rm -rf "$WORK_DIR"
+
+                          # Clone from your public GitHub repository
+                          git clone https://github.com/viralsiddhapura/ulta-poc-dynanmic-flink-statements.git "$WORK_DIR"
+
+                          # Verify clone succeeded
+                          if [ ! -d "$WORK_DIR" ]; then
+                            echo "ERROR: Git clone failed"
+                            exit 1
+                          fi
+
+                          echo "=== Repository cloned successfully ==="
+                          ls -la "$WORK_DIR"
+
+                          # Change to terraform directory
+                          cd "$WORK_DIR/terraform/env/dev/internal-flink-statement"
+
+                          echo "=== Current directory ==="
+                          pwd
+                          ls -la
+
+                          # Get resource name
                           RESOURCE_NAME="<+pipeline.variables.resource_name>"
                           PROPERTIES_FILE="properties/dev/${RESOURCE_NAME}_properties.tfvars"
 
-                          # Create state directory for this domain
+                          echo "=== Using properties file: $PROPERTIES_FILE ==="
+
+                          # Verify properties file exists
+                          if [ ! -f "$PROPERTIES_FILE" ]; then
+                            echo "ERROR: Properties file not found: $PROPERTIES_FILE"
+                            echo "Available files in properties/dev/:"
+                            ls -la properties/dev/
+                            exit 1
+                          fi
+
+                          # Show properties file content (without secrets)
+                          echo "=== Properties file content ==="
+                          cat "$PROPERTIES_FILE"
+
+                          # Create state directory
                           STATE_DIR="state/${DOMAIN}"
                           mkdir -p "$STATE_DIR"
+                          echo "=== State directory: $STATE_DIR ==="
 
-                          # Initialize Terraform with local backend
+                          # Initialize Terraform
+                          echo "=== Initializing Terraform ==="
                           terraform init -backend-config="path=${STATE_DIR}/terraform.tfstate"
 
-                          # Plan
-                          terraform plan \
-                            -var-file="$PROPERTIES_FILE" \
-                            -out=tfplan
+                          # Run plan
+                          echo "=== Running Terraform plan ==="
+                          terraform plan -var-file="$PROPERTIES_FILE" -out=tfplan
 
                           # Show plan
+                          echo "=== Terraform plan output ==="
                           terraform show tfplan
+
+                          # Save plan path for apply stage
+                          echo "$WORK_DIR" > /tmp/work_dir.txt
                     environmentVariables:
                       - name: CONFLUENT_CLOUD_API_KEY
                         type: String
@@ -113,11 +161,12 @@ pipeline:
                         value: <+secrets.getValue("confluent_organization_id")>
                       - name: TF_VAR_kafka_int_flink_api_key
                         type: String
-                        value: <+secrets.getValue("flink_api_key_<+stage.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
+                        value: <+secrets.getValue("flink_api_key_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
                       - name: TF_VAR_kafka_int_flink_api_secret
                         type: String
-                        value: <+secrets.getValue("flink_api_secret_<+stage.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
+                        value: <+secrets.getValue("flink_api_secret_<+execution.stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>")>
                   timeout: 10m
+
     - stage:
         name: Terraform Apply
         identifier: terraform_apply
@@ -132,6 +181,8 @@ pipeline:
                   spec:
                     shell: Bash
                     onDelegate: true
+                    delegateSelectors:
+                      - poc
                     source:
                       type: Inline
                       spec:
@@ -139,15 +190,28 @@ pipeline:
                           #!/bin/bash
                           set -e
 
-                          # Set working directory
-                          WORK_DIR="<+workspace.variables.working_directory>"
-                          cd "$WORK_DIR"
+                          # Get work directory from plan stage
+                          WORK_DIR=$(cat /tmp/work_dir.txt)
+
+                          echo "=== Working directory: $WORK_DIR ==="
+
+                          # Change to terraform directory
+                          cd "$WORK_DIR/terraform/env/dev/internal-flink-statement"
+
+                          echo "=== Current directory ==="
+                          pwd
 
                           # Apply the plan
-                          terraform apply tfplan
+                          echo "=== Applying Terraform plan ==="
+                          terraform apply -auto-approve tfplan
 
                           # Show outputs
+                          echo "=== Terraform outputs ==="
                           terraform output
+
+                          # Cleanup
+                          echo "=== Cleaning up ==="
+                          rm -rf "$WORK_DIR"
                     environmentVariables:
                       - name: CONFLUENT_CLOUD_API_KEY
                         type: String
