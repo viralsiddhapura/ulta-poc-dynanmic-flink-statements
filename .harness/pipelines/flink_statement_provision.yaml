@@ -16,6 +16,7 @@ pipeline:
       description: "Harness workspace name"
       default: "pocflinkworkspace"
       required: true
+      value: "poc-flink-workspace"
 
   stages:
     - stage:
@@ -166,16 +167,16 @@ pipeline:
                           echo "$WORK_DIR" > /tmp/work_dir.txt
                     environmentVariables:
                       - name: CONFLUENT_CLOUD_API_KEY
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("confluent_cloud_api_key")>
                       - name: CONFLUENT_CLOUD_API_SECRET
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
                       - name: TF_VAR_kafka_int_flink_api_key
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("flink_api_key_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                       - name: TF_VAR_kafka_int_flink_api_secret
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("flink_api_secret_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                   timeout: 10m
 
@@ -245,16 +246,16 @@ pipeline:
                           rm -rf "$WORK_DIR"
                     environmentVariables:
                       - name: CONFLUENT_CLOUD_API_KEY
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("confluent_cloud_api_key")>
                       - name: CONFLUENT_CLOUD_API_SECRET
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
                       - name: TF_VAR_kafka_int_flink_api_key
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("flink_api_key_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                       - name: TF_VAR_kafka_int_flink_api_secret
-                        type: String
+                        type: Secret
                         value: <+secrets.getValue("flink_api_secret_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                   timeout: 15m
         when:
