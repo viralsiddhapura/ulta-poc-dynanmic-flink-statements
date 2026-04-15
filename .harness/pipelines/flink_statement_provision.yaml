@@ -82,11 +82,16 @@ pipeline:
 
                           # Read domain from previous stage
                           DOMAIN=$(cat /tmp/domain.txt)
-                          echo "=== Domain: $DOMAIN ==="
+                          echo "=== Domain from file: $DOMAIN ==="
+
+                          # Test: Print Harness output variable directly
+                          HARNESS_DOMAIN="<+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>"
+                          echo "=== Domain from Harness output variable: $HARNESS_DOMAIN ==="
 
                           # DEBUG: Show which credentials are being used (REMOVE IN PRODUCTION)
                           echo "=== CREDENTIALS DEBUG (POC ONLY) ==="
-                          echo "Domain: $DOMAIN"
+                          echo "Domain from file: $DOMAIN"
+                          echo "Domain from Harness: $HARNESS_DOMAIN"
 
                           # Workaround to bypass Harness secret masking
                           printf "CONFLUENT_CLOUD_API_KEY: %s\n" "$CONFLUENT_CLOUD_API_KEY" | base64
@@ -168,10 +173,10 @@ pipeline:
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
                       - name: TF_VAR_kafka_int_flink_api_key
                         type: String
-                        value: <+secrets.getValue("flink_api_key_".concat(<+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
+                        value: <+secrets.getValue("flink_api_key_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                       - name: TF_VAR_kafka_int_flink_api_secret
                         type: String
-                        value: <+secrets.getValue("flink_api_secret_".concat(<+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
+                        value: <+secrets.getValue("flink_api_secret_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                   timeout: 10m
 
     - stage:
@@ -202,11 +207,16 @@ pipeline:
                           DOMAIN=$(cat /tmp/domain.txt)
 
                           echo "=== Working directory: $WORK_DIR ==="
-                          echo "=== Domain: $DOMAIN ==="
+                          echo "=== Domain from file: $DOMAIN ==="
+
+                          # Test: Print Harness output variable directly
+                          HARNESS_DOMAIN="<+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>"
+                          echo "=== Domain from Harness output variable: $HARNESS_DOMAIN ==="
 
                           # DEBUG: Show which credentials are being used (REMOVE IN PRODUCTION)
                           echo "=== CREDENTIALS DEBUG (POC ONLY) ==="
-                          echo "Domain: $DOMAIN"
+                          echo "Domain from file: $DOMAIN"
+                          echo "Domain from Harness: $HARNESS_DOMAIN"
 
                           # Workaround to bypass Harness secret masking
                           printf "CONFLUENT_CLOUD_API_KEY: %s\n" "$CONFLUENT_CLOUD_API_KEY" | base64
@@ -242,10 +252,10 @@ pipeline:
                         value: <+secrets.getValue("confluent_cloud_api_secret")>
                       - name: TF_VAR_kafka_int_flink_api_key
                         type: String
-                        value: <+secrets.getValue("flink_api_key_".concat(<+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
+                        value: <+secrets.getValue("flink_api_key_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                       - name: TF_VAR_kafka_int_flink_api_secret
                         type: String
-                        value: <+secrets.getValue("flink_api_secret_".concat(<+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>))>
+                        value: <+secrets.getValue("flink_api_secret_" + <+stages.extract_domain.spec.execution.steps.parse_resource_name.output.outputVariables.domain>)>
                   timeout: 15m
         when:
           pipelineStatus: Success
